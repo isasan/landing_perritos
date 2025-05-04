@@ -16,17 +16,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install HTMLHint, Pa11y and http-server
+      - name: Install dependencies locally
         run: |
-          npm install -g htmlhint pa11y http-server
+          npm install htmlhint pa11y http-server
 
       - name: Validate HTML files with HTMLHint
         run: |
-          htmlhint **/*.html || exit 1
+          npx htmlhint **/*.html || exit 1
 
-      - name: Validate Accessibility with Pa11y
+      - name: Start local server and run Pa11y accessibility test
         run: |
-          http-server -p 8080 -c-1 &
+          npx http-server -p 8080 -c-1 &  # levanta servidor local
           sleep 3
-          pa11y http://localhost:8080/index.html --standard WCAG2AA --reporter cli
+          npx pa11y http://localhost:8080/index.html --standard WCAG2AA --reporter cli
+
 
