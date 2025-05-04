@@ -16,9 +16,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install HTMLHint, Pa11y, and http-server globally with sudo
+      - name: Install HTMLHint, Pa11y, and http-server globally
         run: |
-          sudo npm install -g htmlhint pa11y http-server
+          npm install -g htmlhint pa11y http-server
 
       - name: Validate HTML files with HTMLHint
         run: |
@@ -28,8 +28,4 @@ jobs:
         run: |
           npx http-server -p 8080 -c-1 &  # Levanta servidor local
           sleep 3
-          npx pa11y http://localhost:8080/index.html --standard WCAG2AA --reporter cli --no-sandbox
-
-
-
-
+          npx pa11y http://localhost:8080/index.html --standard WCAG2AA --reporter cli
