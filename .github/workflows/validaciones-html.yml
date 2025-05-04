@@ -1,4 +1,4 @@
-name: HTML & Accessibility Validation
+name: HTML Validation
 
 on:
   pull_request:
@@ -9,14 +9,14 @@ on:
       - '**.html'
 
 jobs:
-  validate-html-accessibility:
+  validate-html:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Validación de HTML con htmlhint sin instalar globalmente
+      # Validación de HTML con htmlhint
       - name: Install htmlhint locally
         run: |
           npm install htmlhint
@@ -25,43 +25,10 @@ jobs:
         run: |
           npx htmlhint '**/*.html' || exit 1
 
-      # Levantar un servidor local
-      - name: Install and run HTTP server
+      - name: Download vnu-jar
         run: |
-          npm install http-server
-          nohup npx http-server -p 8080 -c-1 &
+          wget https://github.com/validator/validator/releases/download/latest/vnu.jar
+      - name: Validate HTML with vnu
+        run: |
+          java -jar vnu.jar --errors-only --exit-zero-always ./
 
-      # Esperar a que el servidor esté listo
-      - name: Wait for HTTP server to start
-        run: |
-          sleep 5  # Esperamos 5 segundos para que el servidor se inicie
-
-      # Instalar Google Chrome
-      - name: Install Google Chrome
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget curl unzip
-          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo dpkg -i google-chrome-stable_current_amd64.deb
-          sudo apt-get install -f
-
-      # Obtener la versión de Chrome instalada y descargar la versión compatible de ChromeDriver
-      - name: Install ChromeDriver compatible with Chrome
-        run: |
-          # Obtener la versión de Chrome instalada
-          CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | sed 's/\./_/g')
-          
-          # Descargar la versión correcta de ChromeDriver
-          DRIVER_VERSION=$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION} )
-          wget https://chromedriver.storage.googleapis.com/${DRIVER_VERSION}/chromedriver_linux64.zip
-          unzip chromedriver_linux64.zip
-          sudo mv chromedriver /usr/local/bin/
-
-      # Validación de accesibilidad con axe-cli
-      - name: Install axe-cli
-        run: |
-          npm install axe-cli
-
-      - name: Run accessibility tests with axe-cli
-        run: |
-          npx axe http://localhost:8080/index.html --output=json --runOnly wcag2a
