@@ -16,16 +16,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install dependencies locally
+      - name: Install dependencies
         run: |
-          npm install htmlhint pa11y http-server
+          npm install htmlhint axe-cli http-server
 
       - name: Validate HTML files with HTMLHint
         run: |
           npx htmlhint **/*.html || exit 1
 
-      - name: Validate Accessibility with Pa11y
+      - name: Start local server
         run: |
           npx http-server -p 8080 -c-1 &  # Levanta servidor local
-          sleep 3
-          npx pa11y http://localhost:8080/index.html --standard WCAG2AA --reporter cli --no-sandbox
+          sleep 3  # Asegurarse de que el servidor esté corriendo
+
+      - name: Validate Accessibility with axe-cli
+        run: |
+          npx axe http://localhost:8080/index.html --output=json --runOnly wcag2a
