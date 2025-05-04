@@ -23,16 +23,21 @@ jobs:
 
       - name: Validate HTML files with htmlhint
         run: |
-          npx htmlhint **/*.html || exit 1
+          npx htmlhint '**/*.html' || exit 1
 
       # Levantar un servidor local
       - name: Install and run HTTP server
         run: |
           npm install http-server
-          npx http-server -p 8080 -c-1 &
+          nohup npx http-server -p 8080 -c-1 &
 
-      # Instalar Chrome y ChromeDriver compatibles
-      - name: Install Chrome
+      # Esperar a que el servidor esté listo
+      - name: Wait for HTTP server to start
+        run: |
+          sleep 5  # Esperamos 5 segundos para que el servidor se inicie
+
+      # Instalar Google Chrome
+      - name: Install Google Chrome
         run: |
           sudo apt-get update
           sudo apt-get install -y wget curl unzip
@@ -40,10 +45,15 @@ jobs:
           sudo dpkg -i google-chrome-stable_current_amd64.deb
           sudo apt-get install -f
 
-      - name: Install ChromeDriver
+      # Obtener la versión de Chrome instalada y descargar la versión compatible de ChromeDriver
+      - name: Install ChromeDriver compatible with Chrome
         run: |
+          # Obtener la versión de Chrome instalada
           CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | sed 's/\./_/g')
-          wget https://chromedriver.storage.googleapis.com/136.0.7103.49/chromedriver_linux64.zip
+          
+          # Descargar la versión correcta de ChromeDriver
+          DRIVER_VERSION=$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION} )
+          wget https://chromedriver.storage.googleapis.com/${DRIVER_VERSION}/chromedriver_linux64.zip
           unzip chromedriver_linux64.zip
           sudo mv chromedriver /usr/local/bin/
 
