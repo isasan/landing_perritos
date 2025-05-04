@@ -1,4 +1,4 @@
-name: HTML & Accesibility Validation
+name: HTML & Accessibility Validation
 
 on:
   pull_request:
@@ -16,10 +16,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install dependencies
+      # Validación de HTML con htmlhint sin instalar globalmente
+      - name: Install htmlhint locally
         run: |
-          npm install eslint eslint-plugin-jsx-a11y
+          npm install htmlhint
 
-      - name: Lint HTML files for accessibility issues
+      - name: Validate HTML files with htmlhint
         run: |
-          npx eslint **/*.html --ext .html --rule 'jsx-a11y/*: error'
+          npx htmlhint **/*.html || exit 1
+
+      # Levantar un servidor local
+      - name: Install and run HTTP server
+        run: |
+          npm install http-server
+          npx http-server -p 8080 -c-1 &
+
+      # Validación de accesibilidad con axe-core (sin navegador headless)
+      - name: Install axe-core
+        run: |
+          npm install axe-core
+
+      - name: Run accessibility tests with axe-core
+        run: |
+          npx axe http://localhost:8080/index.html --output=json --runOnly wcag2a
