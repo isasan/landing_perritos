@@ -31,11 +31,11 @@ jobs:
           npm install http-server
           npx http-server -p 8080 -c-1 &
 
-      # Validación de accesibilidad con axe-core (sin navegador headless)
-      - name: Install axe-core
+      # Validación de accesibilidad con axe-cli
+      - name: Install axe-cli
         run: |
-          npm install axe-core
+          npm install axe-cli
 
-      - name: Run accessibility tests with axe-core
+      - name: Run accessibility tests with axe-cli
         run: |
           npx axe http://localhost:8080/index.html --output=json --runOnly wcag2a
