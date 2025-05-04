@@ -31,6 +31,22 @@ jobs:
           npm install http-server
           npx http-server -p 8080 -c-1 &
 
+      # Instalar Chrome y ChromeDriver compatibles
+      - name: Install Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget curl unzip
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo dpkg -i google-chrome-stable_current_amd64.deb
+          sudo apt-get install -f
+
+      - name: Install ChromeDriver
+        run: |
+          CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | sed 's/\./_/g')
+          wget https://chromedriver.storage.googleapis.com/136.0.7103.49/chromedriver_linux64.zip
+          unzip chromedriver_linux64.zip
+          sudo mv chromedriver /usr/local/bin/
+
       # Validación de accesibilidad con axe-cli
       - name: Install axe-cli
         run: |
