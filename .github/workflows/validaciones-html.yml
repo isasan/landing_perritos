@@ -1,4 +1,4 @@
-name: HTML & Accessibility Validation
+name: HTML & Accesibility Validation
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
       - main
       - develop
     paths:
-      - '**/*.html'
+      - '**.html'
 
 jobs:
   validate-html-accessibility:
@@ -16,18 +16,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install dependencies locally
+      - name: Install HTMLHint and pa11y
         run: |
-          npm install htmlhint pa11y http-server
+          npm install -g htmlhint pa11y http-server
 
       - name: Validate HTML files with HTMLHint
         run: |
-          npx htmlhint **/*.html || exit 1
+          htmlhint **/*.html || exit 1
 
-      - name: Start local server and run Pa11y accessibility test
+      - name: Validate Accessibility with Pa11y
         run: |
           npx http-server -p 8080 -c-1 &  # levanta servidor local
           sleep 3
-          npx pa11y http://localhost:8080/index.html --standard WCAG2AA --reporter cli
+          pa11y http://localhost:8080/index.html --standard WCAG2AA --reporter cli --no-sandbox
+
 
 
