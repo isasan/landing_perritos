@@ -40,3 +40,4 @@ jobs:
         if: steps.changed_html.outputs.files != ''
         run: |
           java -jar .github/tools/vnu.jar --errors-only ${{ steps.changed_html.outputs.files }}
+
