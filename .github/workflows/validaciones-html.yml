@@ -1,4 +1,4 @@
-name: HTML Validation
+name: HTML & Accessibility Validation
 
 on:
   pull_request:
@@ -9,26 +9,35 @@ on:
       - '**.html'
 
 jobs:
-  validate-html:
+  validate-html-accessibility:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Validación de HTML con htmlhint
+      # Instalar htmlhint localmente
       - name: Install htmlhint locally
         run: |
           npm install htmlhint
 
-      - name: Validate HTML files with htmlhint
+      # Obtener lista de archivos .html modificados
+      - name: Get changed HTML files
+        id: changed_html
         run: |
-          npx htmlhint '**/*.html' || exit 1
+          git fetch origin ${{ github.base_ref }}
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }} | grep '.html$' || true)
+          echo "files=$CHANGED_FILES" >> $GITHUB_OUTPUT
 
-      - name: Download vnu-jar
+      # Validación con htmlhint si hay archivos modificados
+      - name: Run htmlhint if HTML files changed
+        if: steps.changed_html.outputs.files != ''
         run: |
-          wget https://github.com/validator/validator/releases/download/latest/vnu.jar
-      - name: Validate HTML with vnu
+          npx htmlhint ${{ steps.changed_html.outputs.files }}
+
+      # Validación con vnu.jar si hay archivos modificados
+      - name: Run vnu.jar validator if HTML files changed
+        if: steps.changed_html.outputs.files != ''
         run: |
-          java -jar vnu.jar --errors-only --exit-zero-always ./
+          java -jar .github/tools/vnu.jar --errors-only ${{ steps.changed_html.outputs.files }}
 
