@@ -1,0 +1,56 @@
+name: Branch & Tag Naming Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+      - develop
+
+jobs:
+  validate-branch-name:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check branch name pattern
+        run: |
+          BRANCH_NAME="${GITHUB_HEAD_REF}"
+
+          if [[ "$BRANCH_NAME" == feature/* ]]; then
+            echo "✔️ Feature branch OK: $BRANCH_NAME"
+          elif [[ "$BRANCH_NAME" =~ ^release/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "✔️ Release branch OK: $BRANCH_NAME"
+          elif [[ "$BRANCH_NAME" == main || "$BRANCH_NAME" == develop ]]; then
+            echo "✔️ Merging to protected branch: $BRANCH_NAME"
+          else
+            echo "❌ Branch name invalid: $BRANCH_NAME"
+            exit 1
+          fi
+
+  check-release-tag:
+    if: github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    needs: validate-branch-name
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Necesario para traer los tags
+
+      - name: Validate release tag before merging to main
+        run: |
+          BRANCH_NAME="${GITHUB_HEAD_REF}"
+
+          if [[ "$BRANCH_NAME" =~ ^release/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            TAG_EXISTS=$(git tag --list | grep "${BRANCH_NAME#release/}" || true)
+
+            if [ -z "$TAG_EXISTS" ]; then
+              echo "❌ No release tag matching '${BRANCH_NAME#release/}' found. Create it before merging to main."
+              exit 1
+            else
+              echo "✔️ Release tag '${BRANCH_NAME#release/}' found."
+            fi
+          else
+            echo "ℹ️ Not a release branch, skipping tag check."
+          fi
