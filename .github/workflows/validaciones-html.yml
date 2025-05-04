@@ -28,4 +28,4 @@ jobs:
         run: |
           npx http-server -p 8080 -c-1 &  # Levanta servidor local
           sleep 3
-          npx pa11y http://localhost:8080/index.html --standard WCAG2AA --reporter cli
+          npx pa11y http://localhost:8080/index.html --standard WCAG2AA --reporter cli --no-sandbox
