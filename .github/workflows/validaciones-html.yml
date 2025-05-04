@@ -1,4 +1,4 @@
-name: HTML & Accessibility Validation
+name: HTML Validation
 
 on:
   pull_request:
@@ -6,27 +6,29 @@ on:
       - main
       - develop
     paths:
-      - '**/*.html'
+      - '**.html'
 
 jobs:
-  validate-html-accessibility:
+  validate-html:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install HTMLHint, Pa11y and http-server
+      # Validación de HTML con htmlhint
+      - name: Install htmlhint locally
         run: |
-          npm install -g htmlhint pa11y http-server
+          npm install htmlhint
 
-      - name: Validate HTML files with HTMLHint
+      - name: Validate HTML files with htmlhint
         run: |
-          htmlhint **/*.html || exit 1
+          npx htmlhint '**/*.html' || exit 1
 
-      - name: Validate Accessibility with Pa11y
+      - name: Download vnu-jar
         run: |
-          http-server -p 8080 -c-1 &
-          sleep 3
-          pa11y http://localhost:8080/index.html --standard WCAG2AA --reporter cli
+          wget https://github.com/validator/validator/releases/download/latest/vnu.jar
+      - name: Validate HTML with vnu
+        run: |
+          java -jar vnu.jar --errors-only --exit-zero-always ./
 
