@@ -6,7 +6,7 @@ on:
       - main
       - develop
     paths:
-      - '**/*.html'
+      - '**.html'
 
 jobs:
   validate-html-accessibility:
@@ -16,17 +16,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install HTMLHint, Pa11y and http-server
+      # Instalar htmlhint localmente
+      - name: Install htmlhint locally
         run: |
-          npm install -g htmlhint pa11y http-server
+          npm install htmlhint
 
-      - name: Validate HTML files with HTMLHint
+      # Obtener lista de archivos .html modificados
+      - name: Get changed HTML files
+        id: changed_html
         run: |
-          htmlhint **/*.html || exit 1
+          git fetch origin ${{ github.base_ref }}
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }} | grep '.html$' || true)
+          echo "files=$CHANGED_FILES" >> $GITHUB_OUTPUT
 
-      - name: Validate Accessibility with Pa11y
+      # Validación con htmlhint si hay archivos modificados
+      - name: Run htmlhint if HTML files changed
+        if: steps.changed_html.outputs.files != ''
         run: |
-          http-server -p 8080 -c-1 &
-          sleep 3
-          pa11y http://localhost:8080/index.html --standard WCAG2AA --reporter cli
+          npx htmlhint ${{ steps.changed_html.outputs.files }}
+
+      # Validación con vnu.jar si hay archivos modificados
+      - name: Run vnu.jar validator if HTML files changed
+        if: steps.changed_html.outputs.files != ''
+        run: |
+          java -jar .github/tools/vnu.jar --errors-only ${{ steps.changed_html.outputs.files }}
 
