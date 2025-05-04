@@ -1,0 +1,30 @@
+name: HTML & Accesibility Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**.html'
+
+jobs:
+  validate-html-accessibility:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install HTMLHint and pa11y
+        run: |
+          npm install -g htmlhint pa11y
+
+      - name: Validate HTML files with HTMLHint
+        run: |
+          htmlhint **/*.html || exit 1
+
+      - name: Validate Accessibility with Pa11y
+        run: |
+          npx http-server -p 8080 -c-1 & # levanta servidor local
+          sleep 3
+          pa11y http://localhost:8080/index.html --standard WCAG2AA --reporter cli
