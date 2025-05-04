@@ -16,13 +16,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install HTMLHint, Pa11y, and http-server globally
+      - name: Install dependencies locally
         run: |
-          npm install -g htmlhint pa11y http-server
+          npm install htmlhint pa11y http-server
 
       - name: Validate HTML files with HTMLHint
         run: |
-          htmlhint **/*.html || exit 1
+          npx htmlhint **/*.html || exit 1
 
       - name: Validate Accessibility with Pa11y
         run: |
