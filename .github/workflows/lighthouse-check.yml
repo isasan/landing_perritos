@@ -28,10 +28,10 @@ jobs:
 
       - name: Show Lighthouse scores in console
         run: |
-          REPORT=$(find lhci-report -name 'manifest.json' | head -n 1)
-          if [ -f "$REPORT" ]; then
+          REPORT_JSON=$(find lhci-report -name '*.report.json' | head -n 1)
+          if [ -f "$REPORT_JSON" ]; then
             echo "📊 Lighthouse scores:"
-            cat "$REPORT" | jq -r '.summary | to_entries[] | "\(.key): \(.value)"'
+            cat "$REPORT_JSON" | jq -r '.categories | to_entries[] | "\(.key): \(.value.score * 100 | round)%"'
           else
             echo "⚠️ No Lighthouse report found."
           fi
