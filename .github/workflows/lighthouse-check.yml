@@ -1,4 +1,4 @@
-name: HTML & Accessibility Validation
+name: Validacion Accesibilidad Lighthouse
 
 on:
   pull_request:
