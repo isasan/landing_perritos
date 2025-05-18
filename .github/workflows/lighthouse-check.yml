@@ -5,29 +5,27 @@ on:
     branches:
       - main
       - develop
-    paths:
-      - '**.html'
 
 jobs:
-  lighthouse:
+  lighthouse-audit:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
-          npm install -g http-server @lhci/cli
+          npm install http-server @lhci/cli
 
-      - name: Start local server
+      - name: Start HTTP server
         run: |
-          http-server . -p 8080 -c-1 &
-          sleep 5
+          npx http-server -p 8080 -c-1 &
+          sleep 5  # tiempo para levantar el servidor
 
       - name: Run Lighthouse CI
         run: |
-          lhci autorun --collect.url=http://localhost:8080 --upload.target=filesystem --upload.outputDir=./lhci-report || true
+          npx lhci autorun --collect.url=http://localhost:8080/index.html --upload.target=filesystem --upload.outputDir=./lhci-report
 
       - name: Show Lighthouse scores in console
         run: |
@@ -43,4 +41,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: lighthouse-report
-          path: lhci-report
+          path: ./lhci-report
+
