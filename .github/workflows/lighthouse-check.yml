@@ -1,4 +1,4 @@
-name: Lighthouse Accessibility Report
+name: Lighthouse Audit
 
 on:
   pull_request:
@@ -7,28 +7,29 @@ on:
       - develop
 
 jobs:
-  lighthouse-ci:
+  lighthouse-audit:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
-          npm install -g http-server @lhci/cli
+          npm install http-server @lhci/cli
 
-      - name: Start local server
+      - name: Start HTTP server
         run: |
-          http-server -p 8080 -c-1 &
-          sleep 5
+          npx http-server -p 8080 -c-1 &
+          sleep 5  # tiempo para levantar el servidor
 
       - name: Run Lighthouse CI
         run: |
-          lhci collect --url=http://localhost:8080/index.html --outputPath=./lighthouse-report || true
+          npx lhci autorun --collect.url=http://localhost:8080/index.html --upload.target=filesystem --upload.outputDir=./lhci-report
 
-      - name: Upload Lighthouse Report as artifact
+      - name: Upload Lighthouse report artifact
         uses: actions/upload-artifact@v4
         with:
           name: lighthouse-report
-          path: lighthouse-report/
+          path: ./lhci-report
+
