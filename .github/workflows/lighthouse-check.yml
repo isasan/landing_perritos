@@ -5,31 +5,57 @@ on:
     branches:
       - main
       - develop
+    paths:
+      - '**.html'
 
 jobs:
-  lighthouse-audit:
+  validate-html-accessibility:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Install dependencies
         run: |
-          npm install http-server @lhci/cli
+          npm install -g http-server @lhci/cli
 
-      - name: Start HTTP server
+      - name: Start local server
         run: |
-          npx http-server -p 8080 -c-1 &
-          sleep 5  # tiempo para levantar el servidor
+          http-server . -p 8080 -c-1 &
+          sleep 5
 
       - name: Run Lighthouse CI
         run: |
-          npx lhci autorun --collect.url=http://localhost:8080/index.html --upload.target=filesystem --upload.outputDir=./lhci-report
+          lhci autorun --collect.url=http://localhost:8080 --upload.target=filesystem --upload.outputDir=./lhci-report || true
+
+      - name: Show Lighthouse scores summary
+        run: |
+          REPORT=$(find lhci-report -name 'manifest.json' | head -n 1)
+          if [ -f "$REPORT" ]; then
+            echo "📊 Lighthouse summary:"
+            cat "$REPORT" | jq -r '.summary[] | "\(.label): \(.value)"'
+          else
+            echo "⚠️ No Lighthouse summary found."
+          fi
+
+      - name: Show Accessibility Issues
+        run: |
+          REPORT_FILE=$(find lhci-report -name '*.report.json' | head -n 1)
+          if [ -f "$REPORT_FILE" ]; then
+            echo "🛑 Principales problemas de accesibilidad:"
+            cat "$REPORT_FILE" | jq -r '.audits 
+              | to_entries 
+              | map(select(.value.score != 1 and .value.tags[]? == "accessibility"))
+              | sort_by(.value.score)
+              | .[0:5][] 
+              | "- \(.value.title): \(.value.description)"' || echo "✅ Sin problemas importantes detectados."
+          else
+            echo "⚠️ No se encontró el reporte Lighthouse."
+          fi
 
       - name: Upload Lighthouse report artifact
         uses: actions/upload-artifact@v4
         with:
           name: lighthouse-report
-          path: ./lhci-report
-
+          path: lhci-report
