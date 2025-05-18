@@ -16,7 +16,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm install -g http-server @lhci/cli
+          npm install  http-server @lhci/cli
 
       - name: Start HTTP server
         run: |
