@@ -1,4 +1,4 @@
-name: Validacion Accesibilidad Lighthouse
+name: Lighthouse Report
 
 on:
   pull_request:
@@ -9,11 +9,11 @@ on:
       - '**.html'
 
 jobs:
-  validate-html-accessibility:
+  lighthouse:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v3
 
       - name: Install dependencies
@@ -29,30 +29,14 @@ jobs:
         run: |
           lhci autorun --collect.url=http://localhost:8080 --upload.target=filesystem --upload.outputDir=./lhci-report || true
 
-      - name: Show Lighthouse scores summary
+      - name: Show Lighthouse scores in console
         run: |
           REPORT=$(find lhci-report -name 'manifest.json' | head -n 1)
           if [ -f "$REPORT" ]; then
-            echo "📊 Lighthouse summary:"
-            cat "$REPORT" | jq -r '.summary | to_entries[] | "\(.key): \(.value)"'
+            echo "📊 Lighthouse scores:"
+            cat "$REPORT" | jq -r '.summary[] | "\(.label): \(.value)"'
           else
-            echo "⚠️ No Lighthouse summary found."
-          fi
-
-      - name: Show Accessibility Issues
-        run: |
-          REPORT_FILE=$(find lhci-report -name '*.report.json' | head -n 1)
-          if [ -f "$REPORT_FILE" ]; then
-            echo "🛑 Principales problemas de accesibilidad:"
-            cat "$REPORT_FILE" | jq -r '
-              .audits 
-              | to_entries 
-              | map(select(.value.score != 1 and (.value.tags // [] | index("accessibility") != null))) 
-              | sort_by(.value.score) 
-              | .[0:5][] 
-              | "- \(.value.title): \(.value.description)"' || echo "✅ Sin problemas importantes detectados."
-          else
-            echo "⚠️ No se encontró el reporte Lighthouse."
+            echo "⚠️ No Lighthouse report found."
           fi
 
       - name: Upload Lighthouse report artifact
