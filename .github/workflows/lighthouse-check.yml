@@ -1,62 +1,43 @@
-name: HTML & Accessibility Validation
+name: Lighthouse Report
 
 on:
   pull_request:
     branches:
       - main
       - develop
-    paths:
-      - '**.html'
 
 jobs:
-  validate-html-accessibility:
+  lighthouse-audit:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: |
-          npm install -g http-server @lhci/cli
+        run: npm install http-server @lhci/cli
 
-      - name: Start local server
+      - name: Start HTTP server
         run: |
-          http-server . -p 8080 -c-1 &
+          npx http-server -p 8080 -c-1 &
           sleep 5
 
       - name: Run Lighthouse CI
         run: |
-          lhci autorun --collect.url=http://localhost:8080 --upload.target=filesystem --upload.outputDir=./lhci-report || true
+          npx lhci autorun --collect.url=http://localhost:8080/index.html --upload.target=filesystem --upload.outputDir=./lhci-report
 
-      - name: Show Lighthouse scores summary
+      - name: Show Lighthouse scores in console
         run: |
-          REPORT=$(find lhci-report -name 'manifest.json' | head -n 1)
-          if [ -f "$REPORT" ]; then
-            echo "📊 Lighthouse summary:"
-            cat "$REPORT" | jq -r '.summary | to_entries[] | "\(.key): \(.value)"'
+          REPORT_JSON=$(find lhci-report -name '*.report.json' | head -n 1)
+          if [ -f "$REPORT_JSON" ]; then
+            echo "📊 Lighthouse scores:"
+            cat "$REPORT_JSON" | jq -r '.categories | to_entries[] | "\(.key): \(.value.score * 100 | round)%"'
           else
-            echo "⚠️ No Lighthouse summary found."
-          fi
-
-      - name: Show Accessibility Issues
-        run: |
-          REPORT_FILE=$(find lhci-report -name '*.report.json' | head -n 1)
-          if [ -f "$REPORT_FILE" ]; then
-            echo "🛑 Principales problemas de accesibilidad:"
-            cat "$REPORT_FILE" | jq -r '
-              .audits 
-              | to_entries 
-              | map(select(.value.score != 1 and (.value.tags // [] | index("accessibility") != null))) 
-              | sort_by(.value.score) 
-              | .[0:5][] 
-              | "- \(.value.title): \(.value.description)"' || echo "✅ Sin problemas importantes detectados."
-          else
-            echo "⚠️ No se encontró el reporte Lighthouse."
+            echo "⚠️ No Lighthouse report found."
           fi
 
       - name: Upload Lighthouse report artifact
         uses: actions/upload-artifact@v4
         with:
           name: lighthouse-report
-          path: lhci-report
+          path: ./lhci-report
