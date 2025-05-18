@@ -1,4 +1,4 @@
-name: Lighthouse Audit
+name: HTML & Accessibility Validation
 
 on:
   pull_request:
@@ -34,7 +34,7 @@ jobs:
           REPORT=$(find lhci-report -name 'manifest.json' | head -n 1)
           if [ -f "$REPORT" ]; then
             echo "📊 Lighthouse summary:"
-            cat "$REPORT" | jq -r '.summary[] | "\(.label): \(.value)"'
+            cat "$REPORT" | jq -r '.summary | to_entries[] | "\(.key): \(.value)"'
           else
             echo "⚠️ No Lighthouse summary found."
           fi
@@ -44,10 +44,11 @@ jobs:
           REPORT_FILE=$(find lhci-report -name '*.report.json' | head -n 1)
           if [ -f "$REPORT_FILE" ]; then
             echo "🛑 Principales problemas de accesibilidad:"
-            cat "$REPORT_FILE" | jq -r '.audits 
+            cat "$REPORT_FILE" | jq -r '
+              .audits 
               | to_entries 
-              | map(select(.value.score != 1 and .value.tags[]? == "accessibility"))
-              | sort_by(.value.score)
+              | map(select(.value.score != 1 and (.value.tags // [] | index("accessibility") != null))) 
+              | sort_by(.value.score) 
               | .[0:5][] 
               | "- \(.value.title): \(.value.description)"' || echo "✅ Sin problemas importantes detectados."
           else
