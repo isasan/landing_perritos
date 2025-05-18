@@ -15,26 +15,25 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: |
-          npm install  http-server @lhci/cli
+        run: npm install http-server @lhci/cli
 
       - name: Start HTTP server
         run: |
-          http-server -p 8080 -c-1 &
+          npx http-server -p 8080 -c-1 &
           sleep 5
 
       - name: Run Lighthouse CI
         run: |
-          lhci autorun --collect.url=http://localhost:8080/index.html --upload.target=filesystem --upload.outputDir=./lhci-report
+          npx lhci autorun --collect.url=http://localhost:8080/index.html --upload.target=filesystem --upload.outputDir=./lhci-report
 
       - name: Show Lighthouse scores in console
         run: |
-          REPORT_JSON=$(find lhci-report -name '*.report.json' | head -n 1)
-          if [ -f "$REPORT_JSON" ]; then
+          REPORT=$(find lhci-report -name 'manifest.json' | head -n 1)
+          if [ -f "$REPORT" ]; then
             echo "📊 Lighthouse scores:"
-            jq '.categories | {performance: .performance.score, accessibility: .accessibility.score, "best-practices": ."best-practices".score, seo: .seo.score}' "$REPORT_JSON"
+            cat "$REPORT" | jq -r '.summary | to_entries[] | "\(.key): \(.value)"'
           else
-            echo "⚠️ No Lighthouse report JSON found."
+            echo "⚠️ No Lighthouse report found."
           fi
 
       - name: Upload Lighthouse report artifact
